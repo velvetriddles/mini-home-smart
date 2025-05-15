@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="ru"><meta charset="utf-8">
+<body style="font-family:sans-serif;max-width:600px;margin:40px auto;">
+  <h2>Smart-Home Intent Tester</h2>
+  <input id="text" style="width:80%" placeholder="Введите команду…">
+  <button id="send">Отправить</button>
+  <pre id="log" style="background:#111;color:#0f0;padding:12px;min-height:200px;"></pre>
+
+<script>
+document.getElementById('send').onclick = async () => {
+  const text = document.getElementById('text').value.trim();
+  if(!text) return;
+  const res = await fetch('http://localhost:8080/classify',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text})
+  });
+  const d = await res.json();
+  document.getElementById('log').textContent +=
+       `${d.text}  →  ${d.intent}\n`;
+  document.getElementById('text').value='';
+};
+</script>
+</body></html> 

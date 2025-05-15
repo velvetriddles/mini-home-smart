@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # Сервис Ollama для запуска языковой модели
+  ollama:
+    image: ollama/ollama:latest
+    container_name: smartnlu-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./.ollama:/root/.ollama
+    healthcheck:
+      # Проверяем, что Ollama API в целом доступен
+      test: ["CMD-SHELL", "curl -sf http://localhost:11434/api/tags > /dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s # Даем время на старт
+
+  # Сервис Go для обработки запросов классификации
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartnlu-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy # Ждем, пока Ollama сервер станет доступен
+    command: ./server 
