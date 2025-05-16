@@ -114,6 +114,11 @@ func main() {
 	// Настраиваем HTTP сервер
 	mux := http.NewServeMux()
 
+	// Health-check для Docker Compose
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	// Обработчик для классификации текста
 	mux.HandleFunc("/classify", func(w http.ResponseWriter, r *http.Request) {
 		// Добавляем CORS заголовки

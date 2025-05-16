@@ -68,6 +68,8 @@ document.getElementById('mic').onclick = async () => {
 // Инициализация WebSocket и записи с микрофона
 async function startListening() {
   try {
+    let silenceTimer;
+    
     log('Запрашиваем доступ к микрофону...');
     document.getElementById('status').textContent = 'Запрашиваем доступ к микрофону...';
     
@@ -124,6 +126,9 @@ async function startListening() {
         pcm16[i] = Math.max(-1, Math.min(1, inData[i]))*32767;
       }
       if(socket.readyState === 1) socket.send(pcm16.buffer);
+
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(stopListening, 4000);  // если 4 с тишины — стоп
     };
     
     // Подключаем процессор к источнику и к выходу
@@ -131,20 +136,17 @@ async function startListening() {
     processor.connect(audioContext.destination);
     
     // Обработка ответов от сервера
-    socket.onmessage = (event) => {
-      try {
-        const result = JSON.parse(event.data);
-        log(`Получен ответ: ${JSON.stringify(result)}`);
-        
-        if (result.text && result.text.trim() !== '') {
-          document.getElementById('text').value = result.text;
-          if (!result.partial) {
-            classifyText(result.text);
-          }
-        }
-      } catch (e) {
-        console.error('Error parsing response:', e);
-        log(`Ошибка разбора ответа: ${e.message}`);
+    socket.onmessage = (e) => {
+      const d = JSON.parse(e.data);
+
+      // пропускаем пустые partial-ы
+      if (d.partial && d.partial.trim() === '') return;
+
+      log(`Ответ: ${e.data}`);
+
+      if (d.text && d.text.trim() !== '') {
+          classifyText(d.text.trim());  // уже есть в коде
+          stopListening();              // <-- автоматически останавливаем запись
       }
     };
     
