@@ -2,26 +2,30 @@
 
 ## Текущая реализация
 
-Система состоит из двух микросервисов:
+Система состоит из трех микросервисов:
 
 1. **Ollama** - локальный LLM-сервер для запуска малой языковой модели (phi3:mini)
 2. **API** - Go-сервис, обрабатывающий запросы классификации команд пользователя
+3. **STT** - Vosk сервер для распознавания речи на русском языке
 
 ### Архитектура
 
 ```
-[Клиент] ---> [API (Go, порт 8080)] ---> [Ollama (порт 11434)]
-   |                  |
-   |                  | 
-   +------------------+
-      HTTP-запросы
+                     +---> [Ollama (порт 11434)]
+                     |
+[Клиент] <---> [API (Go, порт 8080)]
+   |                  
+   |                    
+   +---> [STT (Vosk, порт 2700)]
+      WebSocket аудио
 ```
 
 ### Принцип работы
 
-1. Пользователь отправляет текст команды на `/classify` эндпоинт API
-2. Go-сервер формирует промпт с примерами команд (few-shot) и отправляет запрос к Ollama API
-3. Модель phi3:mini классифицирует текст в одну из категорий:
+1. Пользователь отправляет текст команды на `/classify` эндпоинт API или аудио через WebSocket на STT-сервер
+2. STT-сервер преобразует речь в текст и возвращает результат клиенту
+3. Go-сервер формирует промпт с примерами команд (few-shot) и отправляет запрос к Ollama API
+4. Модель phi3:mini классифицирует текст в одну из категорий:
    - light_on, light_off
    - temperature_up, temperature_down
    - music_on, music_off
@@ -30,7 +34,21 @@
    - door_lock, door_unlock
    - sensor_check, sensor_reset
    - unknown
-4. API возвращает классифицированный интент
+5. API возвращает классифицированный интент
+
+### Установка
+
+1. Склонируйте репозиторий
+2. Загрузите модель русского языка для Vosk:
+   ```bash
+   mkdir -p models/vosk-ru
+   wget https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip
+   unzip vosk-model-small-ru-0.22.zip -d models/vosk-ru
+   ```
+3. Запустите сервисы:
+   ```bash
+   docker-compose up -d
+   ```
 
 ### Управление системой
 
@@ -48,9 +66,45 @@ docker-compose up -d --build
 # Просмотр логов
 docker logs smartnlu-api
 docker logs smartnlu-ollama
+docker logs smartnlu-stt
 
 # Проверка работы API
 curl -X POST -H "Content-Type: application/json" -d '{"text": "включи свет"}' http://localhost:8080/classify
+```
+
+### Использование STT
+
+STT-сервер (Vosk) запускается на порту 2700 и принимает аудиопоток через WebSocket. Клиент отправляет аудио с частотой дискретизации 16 кГц. Сервер возвращает распознанный текст в формате JSON.
+
+Пример использования в JavaScript:
+```javascript
+// Создание WebSocket соединения с STT-сервером
+const socket = new WebSocket('ws://localhost:2700');
+socket.binaryType = 'arraybuffer';
+
+// Инициализация
+socket.onopen = () => {
+  socket.send(JSON.stringify({config:{sample_rate:16000}}));
+};
+
+// Обработка ответов от сервера
+socket.onmessage = function(event) {
+  const result = JSON.parse(event.data);
+  if (result.text) {
+    console.log('Распознанный текст:', result.text);
+    // Отправка текста на сервер классификации
+    fetch('/classify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: result.text })
+    })
+    .then(response => response.json())
+    .then(data => console.log('Интент:', data.intent));
+  }
+};
+
+// При завершении работы
+socket.send(JSON.stringify({"eof":1}));
 ```
 
 ## Планы развития

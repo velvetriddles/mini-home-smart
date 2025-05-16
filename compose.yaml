@@ -30,6 +30,23 @@ services:
     environment:
       - OLLAMA_HOST=http://ollama:11434
     depends_on:
-      ollama:
-        condition: service_healthy # Ждем, пока Ollama сервер станет доступен
+      - ollama
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      retries: 5
     command: ./server 
+
+  # Сервис распознавания речи Vosk
+  stt:
+    image: alphacep/kaldi-vosk-server:latest
+    container_name: smartnlu-stt
+    restart: unless-stopped
+    ports:
+      - "2700:2700"
+    environment:
+      - VOSK_SAMPLE_RATE=16000
+      - VOSK_MODEL_PATH=/models/ru
+    volumes:
+      - ./models/vosk-ru:/models/ru
+    command: /opt/vosk-server/websocket/asr_server.py
