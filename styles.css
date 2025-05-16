@@ -2,6 +2,7 @@
   --primary: #7f5af0;
   --primary-light: #9f7aea;
   --secondary: #2cb67d;
+  --secondary-light: #4fd599;
   --text-primary: #fffffe;
   --text-secondary: #94a1b2;
   --bg-primary: #16161a;
@@ -9,21 +10,38 @@
   --bg-card: #242629;
   --border: rgba(255,255,255,0.1);
   --shadow: 0 10px 30px -10px rgba(0,0,0,0.4);
-  --border-radius: 12px;
-  --transition: all 0.25s cubic-bezier(0.645, 0.045, 0.355, 1);
+  --border-radius: 16px;
+  --transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+  
+  /* Цвета для статусов устройств */
+  --status-on: #2cb67d;
+  --status-off: #94a1b2;
+  --status-warning: #ffbd2e;
+  --status-error: #ff5f56;
+  --status-online: #2cb67d;
+  --status-offline: #94a1b2;
 }
 
 .light-theme {
   --primary: #6246ea;
   --primary-light: #7f5af0;
   --secondary: #2cb67d;
+  --secondary-light: #4fd599;
   --text-primary: #2b2c34;
   --text-secondary: #5f6c7b;
-  --bg-primary: #fffffe;
+  --bg-primary: #f8f9fa;
   --bg-secondary: #f2f4f6;
   --bg-card: #ffffff;
   --border: rgba(0,0,0,0.1);
   --shadow: 0 10px 30px -15px rgba(0,0,0,0.1);
+  
+  /* Цвета для статусов устройств */
+  --status-on: #2cb67d;
+  --status-off: #94a1b2;
+  --status-warning: #ffbd2e;
+  --status-error: #ff5f56;
+  --status-online: #2cb67d;
+  --status-offline: #94a1b2;
 }
 
 * {
@@ -40,6 +58,7 @@ body {
   min-height: 100vh;
   padding: 0;
   margin: 0;
+  background-image: linear-gradient(to bottom right, rgba(127, 90, 240, 0.05), rgba(44, 182, 125, 0.05));
 }
 
 .container {
@@ -57,6 +76,7 @@ body {
   margin-bottom: 24px;
   border: 1px solid var(--border);
   backdrop-filter: blur(10px);
+  transition: var(--transition);
 }
 
 .header {
@@ -69,10 +89,11 @@ body {
 .logo {
   font-size: 28px;
   margin-right: 16px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: bold;
+  text-shadow: 0px 2px 4px rgba(0,0,0,0.1);
 }
 
 h1 {
@@ -85,6 +106,13 @@ h1 {
   line-height: 1.2;
 }
 
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
 .theme-toggle {
   position: absolute;
   right: 0;
@@ -93,7 +121,14 @@ h1 {
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: var(--text-secondary);
+  transition: var(--transition);
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.theme-toggle:hover {
+  transform: scale(1.1) rotate(15deg);
+  background-color: var(--bg-secondary);
 }
 
 .input-group {
@@ -157,7 +192,8 @@ button {
 
 #send:hover {
   transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.2), 0 3px 6px rgba(0, 0, 0, 0.12);
+  filter: brightness(1.05);
 }
 
 #mic {
@@ -167,11 +203,13 @@ button {
 
 #mic:hover {
   transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.2), 0 3px 6px rgba(0, 0, 0, 0.12);
+  filter: brightness(1.05);
 }
 
 #mic.recording {
   animation: pulse 1.5s infinite;
+  background: linear-gradient(135deg, #0052ff, #5e7eff);
 }
 
 @keyframes pulse {
@@ -196,10 +234,255 @@ button {
   transition: var(--transition);
 }
 
+/* Новые стили для секции устройств */
+.devices-section {
+  margin-bottom: 30px;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.devices-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.device-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.device-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.device-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--status-off);
+  transition: var(--transition);
+}
+
+.device-card.active::before {
+  background: var(--status-on);
+}
+
+.device-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(127, 90, 240, 0.05), rgba(44, 182, 125, 0.05));
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.device-card:hover::after {
+  opacity: 1;
+}
+
+.device-icon {
+  font-size: 24px;
+  margin-right: 12px;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  position: relative;
+  z-index: 1;
+  transition: var(--transition);
+  border: 1px solid var(--border);
+}
+
+.device-card:hover .device-icon {
+  transform: scale(1.1);
+}
+
+.device-info {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.device-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+}
+
+.device-status {
+  font-size: 14px;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+}
+
+.device-status::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  background-color: var(--status-offline);
+}
+
+.device-status.on {
+  color: var(--status-on);
+}
+
+.device-status.off {
+  color: var(--status-off);
+}
+
+.device-status.warning {
+  color: var(--status-warning);
+}
+
+.device-status.warning::before {
+  background-color: var(--status-warning);
+}
+
+.device-status.error {
+  color: var(--status-error);
+}
+
+.device-status.error::before {
+  background-color: var(--status-error);
+}
+
+.device-status.online {
+  color: var(--status-online);
+  font-weight: 500;
+}
+
+.device-status.online::before {
+  background-color: var(--status-online);
+  box-shadow: 0 0 5px var(--status-online);
+  animation: blink 2s infinite;
+}
+
+.device-status.offline {
+  color: var(--status-offline);
+  font-weight: 500;
+}
+
+.device-status.offline::before {
+  background-color: var(--status-offline);
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.device-value {
+  display: none; /* Скрываем значения, будем показывать только по запросу */
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-left: 8px;
+}
+
+.device-value-display {
+  display: inline-block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.device-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--status-off);
+  transition: var(--transition);
+  position: relative;
+  z-index: 1;
+}
+
+.device-indicator.on {
+  background: var(--status-on);
+  box-shadow: 0 0 10px var(--status-on);
+  animation: pulse-light 2s infinite;
+}
+
+@keyframes pulse-light {
+  0% {
+    box-shadow: 0 0 5px 0px var(--status-on);
+  }
+  50% {
+    box-shadow: 0 0 10px 3px var(--status-on);
+  }
+  100% {
+    box-shadow: 0 0 5px 0px var(--status-on);
+  }
+}
+
+.device-indicator.off {
+  background: var(--status-off);
+}
+
+.device-card[data-device="thermostat"] .device-icon,
+.device-card[data-device="thermostat"] .device-value {
+  color: var(--status-on);
+}
+
+.last-command {
+  margin-top: 16px;
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.last-command-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-right: 8px;
+}
+
+.last-command-text {
+  color: var(--primary);
+  font-weight: 500;
+}
+
 .terminal-card {
   position: relative;
   border-radius: var(--border-radius);
   overflow: hidden;
+  transition: var(--transition);
+  box-shadow: var(--shadow);
 }
 
 .terminal-header {
@@ -262,18 +545,76 @@ button {
 
 .badge {
   display: inline-block;
-  padding: 6px 10px;
+  padding: 6px 12px;
   font-size: 12px;
   border-radius: 30px;
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
   margin: 0 6px;
   font-weight: 500;
+  opacity: 0.8;
+  transition: var(--transition);
+}
+
+.badge:hover {
+  opacity: 1;
+  transform: translateY(-1px);
 }
 
 .highlight {
   color: var(--primary);
   font-weight: 600;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Класс для временного отображения значений датчиков */
+.show-device-value {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  opacity: 0;
+  background: var(--bg-card);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  z-index: 100;
+  border: 1px solid var(--border);
+  min-width: 300px;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.show-device-value h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.show-device-value .value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.show-device-value button {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  padding: 10px 20px;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.show-device-value button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
 }
 
 @media (max-width: 768px) {
@@ -292,4 +633,82 @@ button {
   h1 {
     font-size: 24px;
   }
+  
+  .devices-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Эффект волны для клика */
+.ripple {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.4);
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(100);
+    opacity: 0;
+  }
+}
+
+/* Стили для окна деталей устройства */
+.device-details .value {
+  text-align: left;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.device-details .value p {
+  margin: 8px 0;
+}
+
+.device-details .value strong {
+  font-weight: 600;
+}
+
+.device-offline-message {
+  color: var(--status-offline);
+  font-style: italic;
+  margin-top: 12px !important;
+}
+
+.device-controls {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.control-button {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.control-button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+/* Улучшения для активного состояния карточек */
+.device-card.active .device-icon {
+  background: linear-gradient(135deg, var(--primary-light), var(--secondary-light));
+  color: white;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+}
+
+.device-card.active {
+  border-color: var(--primary);
 } 
