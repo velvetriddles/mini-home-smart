@@ -196,5 +196,26 @@ function stopListening() {
 
 // Начальное сообщение
 log('Страница загружена, система готова');
+
+// Функция для разогрева модели при загрузке страницы
+(async function warmupModel() {
+  try {
+    log('Разогрев модели при загрузке страницы...');
+    document.getElementById('status').textContent = 'Прогрев модели...';
+    
+    // Выполняем запрос для прогрева модели (без отображения результата)
+    await fetch('http://localhost:8080/classify', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text: 'включи свет'})
+    });
+    
+    log('Модель прогрета и готова к использованию');
+    document.getElementById('status').textContent = '';
+  } catch(e) {
+    console.error('Ошибка при прогреве модели:', e);
+    log(`Прогрев модели не выполнен: ${e.message}`);
+  }
+})();
 </script>
 </body></html> 
